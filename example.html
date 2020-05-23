@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>essentia.js examples</title>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <link
+      rel="stylesheet"
+      type="text/css"
+      href="https://cdnjs.cloudflare.com/ajax/libs/semantic-ui/2.4.1/semantic.min.css"
+    />
+  </head>
+  <center>
+    <body style="background-color:  #000000!important;">
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/semantic-ui/2.4.1/semantic.min.js"></script>
+      <script src="https://unpkg.com/essentia.js@0.0.9/dist/essentia-wasm.web.js"></script>
+      <script src="https://unpkg.com/essentia.js@0.0.9/dist/essentia.js-extractor.js"></script>
+      <script src="https://unpkg.com/essentia.js@0.0.9/dist/essentia.js-plot.js"></script>
+      <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+      <script src="script.js" defer></script>
+      <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
+
+      <div>
+        <a>
+          <h1> HARMONIC CHANGE DETECTION FUNCTION </h1>
+        </a>
+      </div>
+      <h2 style="color: azure;">
+        HPCP chroma example
+      </h2>
+      
+      <div class="ui divider" style="height: 2px; width: 2px;"></div>
+
+      <input type="file" id="upload" />
+      <audio id="audio" controls>
+        <source src="https://freesound.org/data/previews/328/328857_230356-lq.mp3" id="src" />
+      </audio>
+
+      <div id="logDiv" style="color: azure;"><br /></div>
+      <div class="ui divider" style="width: 2px; height: 5px;"></div>
+      <div id="plotDiv"></div>
+      <br />
+      <br />
+    </body>
+  </center>
+</html>
