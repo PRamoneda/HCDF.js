@@ -1,3 +1,4 @@
 # HCDF.js
 
-Harmonic Change Detection Function simplementation based on essentia.js
+Harmonic Change Detection Function implementation based on essentia.js.
+
