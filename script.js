@@ -290,29 +290,30 @@ async function onClickFeatureExtractor() {
   const hopSize = 512;
   const sampleRate = 8000;
 
-  console.log("audio antes downsampling", audioData);
-  audioData = downsample(audioData, 44100, sampleRate); 
-  console.log("audio despues downsampling", audioData);
-  let frames = essentia.FrameGenerator(audioData, 
-                                      frameSize, 
-                                      hopSize)
+  // console.log("audio antes downsampling", audioData);
+  // audioData = downsample(audioData, 44100, sampleRate); 
+  // console.log("audio despues downsampling", audioData);
+  // let frames = essentia.FrameGenerator(audioData, 
+  //                                     frameSize, 
+  //                                     hopSize)
 
 
-  let chroma = chromaNNLS(frames, frameSize, hopSize, sampleRate);
-  console.log("chroma", chroma);
+  // let chroma = chromaNNLS(frames, frameSize, hopSize, sampleRate);
+  // console.log("chroma", chroma);
+  let chroma = [[0.0, 1.0, 0.0, 1.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0]]
 
-  let tonal_centroids = tonal_interval_space(chroma);
+  let tonal_centroids = tonal_interval_space(chroma, "symbolic");
   console.log("tonal centroids", tonal_centroids);
 
-  let smoothed_centroids = gaussian_smoothing(tonal_centroids, 5);
-  console.log("gaussian smoothing", tonal_centroids);
+  // let smoothed_centroids = gaussian_smoothing(tonal_centroids, 5);
+  // console.log("gaussian smoothing", tonal_centroids);
 
-  let harmonic_function = distance(smoothed_centroids);
-  console.log("distance", distance);
+  // let harmonic_function = distance(smoothed_centroids);
+  // console.log("distance", distance);
 
-  let cps = centroids_per_second(audioData, sampleRate, smoothed_centroids);
-  let harmonic_changes = peaks(harmonic_function, cps);
-  console.log("harmonic_changes", harmonic_changes);
+  // let cps = centroids_per_second(audioData, sampleRate, smoothed_centroids);
+  // let harmonic_changes = peaks(harmonic_function, cps);
+  // console.log("harmonic_changes", harmonic_changes);
 
 
 
