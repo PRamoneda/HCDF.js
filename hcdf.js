@@ -1,12 +1,3 @@
-function handleFiles(event) {
-  var files = event.target.files;
-  $("#src").attr("src", URL.createObjectURL(files[0]));
-  document.getElementById("audio").load();
-}
-
-document.getElementById("upload").addEventListener("change", handleFiles, false);
-
-
 let essentia
 
 /* "https://freesound.org/data/previews/328/328857_230356-lq.mp3"; */
@@ -20,6 +11,28 @@ let plotContainerId = "plotDiv";
 
 let isComputed = false;
 
+
+/*
+* returns an audio buffer downsampled from sample rate old_sr to sample rate new_sr
+*
+* Parameters
+* ----------
+* buffer : number > 0 [scalar]
+*   audio
+*
+* old_sr: number > 0 [scalar]
+*   
+*
+* new_sr: number > 0 [scalar]
+*     
+*
+* hopsize: number [scalar]
+*   overlap
+* 
+* Returns
+* -------
+* audio downsampled
+*/
 function downsample(buffer, old_sr, new_sr) {
     if (new_sr == old_sr) {
         return buffer;
@@ -46,29 +59,28 @@ function downsample(buffer, old_sr, new_sr) {
     return result;
 }
 
-function chromaCQT(){
-  // CHROMA CQT
-  // var chroma_list = [];
-  
-  // for (var i = 0; i < frames.size(); i++) {
-  //   let chroma = essentia.Chromagram(frames.get(i),
-  //                                   12,//binsPerOctave
-  //                                   110, //minFrequency
-  //                                   4, //minimumKernelSize
-  //                                   "unit_max", // normalizeType
-  //                                   36, //numberBins
-  //                                   sampleRate,
-  //                                   1, //scale
-  //                                   0.01, //threshold
-  //                                   "hann",//hann
-  //                                    ).chromagram;
-  //   chroma = essentia.vectorToArray(chroma);
-  //   console.log(chroma);
-  //   chroma_list.push(chroma);
-  // }
-  return;
-}
 
+/*
+* returns nnls chromagram
+*
+* Parameters
+* ----------
+* frames : number > 0 [scalar]
+*   audio
+*
+* sampleRate: number > 0 [scalar]
+*   chroma-samplerate-framesize-overlap
+*
+* framesize: number [scalar]
+*     frame size of windos
+*
+* hopsize: number [scalar]
+*   overlap
+* 
+* Returns
+* -------
+* list of chromagrams 
+*/
 function chromaNNLS(frames, frameSize, hopSize, sampleRate){
   let logSpectFrames = new essentia.module.VectorVectorFloat();
   for (var i=0; i<frames.size(); i++) {
@@ -111,6 +123,7 @@ function chromaNNLS(frames, frameSize, hopSize, sampleRate){
   return chroma_list;
 }
 
+
 function everything_is_zero(vector){
   let is_zero = true;
   for (var i = vector.length - 1; i >= 0 && is_zero; i--) {
@@ -122,7 +135,9 @@ function everything_is_zero(vector){
 }
 
 
-
+/**
+ * Discrete Fourier Transfrom
+ */
 function DFT(input, zero = 1e-10) {
   // Discrete Fourier Transform
   const N = input.length;
@@ -171,12 +186,14 @@ function DFT(input, zero = 1e-10) {
   return signals;
 }
 
+
 function division(vector, energy){
   for (var i = vector.length - 1; i >= 0; i--) {
     vector[i] = vector[i]/energy;
   }
   return vector;
 }
+
 
 function multiply(vectorA, vectorB){
     var ans = new Array(12);
@@ -206,6 +223,21 @@ function TIV(pcp, weights){
   return vector;
 }
 
+/*
+* returns tonal interval space from a vector of chromagrams
+*
+* Parameters
+* ----------
+* chroma : list
+*  list of chromagrams
+*
+* weights: str 
+*  "audio", "symbolic" or "harte"
+*
+* Returns
+* -------
+* list of tonal interval space vectors
+*/
 function tonal_interval_space(chroma, weights="audio"){
   // Tonal Interval Space
   let centroid_vector = [];
@@ -227,6 +259,20 @@ function avg (v) {
   return v.reduce((a,b) => a+b, 0)/v.length;
 }
 
+
+/*
+* Apply gaussian smoothing to tonal model centroids
+* Parameters
+* ----------
+* vector: list 
+*   tonal centroids of the tonal model
+* sigma: number (scalar > 0) optional
+*   sigma of gaussian smoothing value. 
+* Returns
+* -------
+* list 
+*   centroids blurred by gassuian smoothing
+*/
 function gaussian_smoothing_vector(vector, sigma) {
   var t_avg = avg(vector)*sigma;
   var ret = Array(vector.length);
@@ -240,6 +286,7 @@ function gaussian_smoothing_vector(vector, sigma) {
   return ret;
 }
 
+
 function gaussian_smoothing(tis, sigma){
   var ans = [];
   for (var i = tis.length - 1; i >= 0; i--) {
@@ -248,6 +295,19 @@ function gaussian_smoothing(tis, sigma){
   return ans;
 }
 
+
+/*
+* Returns the quantity of centroids per second
+
+*   Parameters
+*   ----------
+*   centroids : list of floats
+*       The file location of the spreadsheet
+*   Returns
+*   -------
+*   float
+*       centroids per second
+*/
 function distance(centroids){
     var ans = [0];
     for (var i = 1; i < centroids.length - 1; i++) {
@@ -261,9 +321,26 @@ function distance(centroids){
     return ans;
 }
 
+
+/*
+* Returns the quantity of centroids per second
+*
+* Parameters
+* ----------
+* y : list of floats
+*     The file location of the spreadsheet
+* sr : bool
+*     A flag used to print the columns to the console (default is False)
+*
+* Returns
+* -------
+* float
+*     centroids per second
+*/
 function centroids_per_second(y, sr, centroids){
   return sr * centroids.length / y.length;
 }
+
 
 function peaks(hcdf_function, rate_centroids_second){
     let changes = [0];
@@ -276,9 +353,21 @@ function peaks(hcdf_function, rate_centroids_second){
 }
 
 
-// callback function which compute the frame-wise HPCP chroma of input audioURL on a button.onclick event
-async function onClickFeatureExtractor() {
-  let audioURL = document.getElementById("audio").currentSrc;
+/*
+* Computes Harmonic Change Detection Function
+
+* Parameters
+* ----------
+* id_audio: str
+*     id of HTML element <audio>
+
+* Returns
+* -------
+* list
+*   harmonic changes (the peaks) on the song detected
+*/
+export async function HCDF(id_audio) {
+  let audioURL = document.getElementById(id_audio).currentSrc;
   console.log(audioURL);
 
   // load audio file from an url
@@ -290,78 +379,47 @@ async function onClickFeatureExtractor() {
   const hopSize = 512;
   const sampleRate = 8000;
 
-  // console.log("audio antes downsampling", audioData);
-  // audioData = downsample(audioData, 44100, sampleRate); 
-  // console.log("audio despues downsampling", audioData);
-  // let frames = essentia.FrameGenerator(audioData, 
-  //                                     frameSize, 
-  //                                     hopSize)
+  console.log("audio antes downsampling", audioData);
+  audioData = downsample(audioData, 44100, sampleRate); 
+  console.log("audio despues downsampling", audioData);
+  let frames = essentia.FrameGenerator(audioData, 
+                                      frameSize, 
+                                      hopSize)
 
 
-  // let chroma = chromaNNLS(frames, frameSize, hopSize, sampleRate);
-  // console.log("chroma", chroma);
+  let chroma = chromaNNLS(frames, frameSize, hopSize, sampleRate);
+  console.log("chroma", chroma);
   let chroma = [[0.0, 1.0, 0.0, 1.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0]]
 
   let tonal_centroids = tonal_interval_space(chroma, "symbolic");
   console.log("tonal centroids", tonal_centroids);
 
-  // let smoothed_centroids = gaussian_smoothing(tonal_centroids, 5);
-  // console.log("gaussian smoothing", tonal_centroids);
+  let smoothed_centroids = gaussian_smoothing(tonal_centroids, 5);
+  console.log("gaussian smoothing", tonal_centroids);
 
-  // let harmonic_function = distance(smoothed_centroids);
-  // console.log("distance", distance);
+  let harmonic_function = distance(smoothed_centroids);
+  console.log("distance", distance);
 
-  // let cps = centroids_per_second(audioData, sampleRate, smoothed_centroids);
-  // let harmonic_changes = peaks(harmonic_function, cps);
-  // console.log("harmonic_changes", harmonic_changes);
+  let cps = centroids_per_second(audioData, sampleRate, smoothed_centroids);
+  let harmonic_changes = peaks(harmonic_function, cps);
+  console.log("harmonic_changes", harmonic_changes);
 
-
-
-
-
-
-
-
-      
-  // plot the feature
-  plotChroma.create(
-    chroma, // input feature array
-    "NNLS Chroma", // plot title
-    audioData.length, // length of audio in samples
-    sampleRate // audio sample rate
-  );
-  isComputed = true;
+  return await harmonic_changes;
  
 
 }
 
-$(document).ready(function() {
-  
-  // create EssentaPlot instance
-  plotChroma = new EssentiaPlot.PlotHeatmap(
-    Plotly, // Plotly.js global 
-    plotContainerId, // HTML container id
-    "chroma", // type of plot
-    EssentiaPlot.LayoutChromaPlot // layout settings
-  );
 
+/*
+* Function for loading essentia wasm module
+*
+*/
+export async function loadEssentia(){
   // Now let's load the essentia wasm back-end, if so create UI elements for computing features
   EssentiaModule().then(async function(WasmModule) {
-
-    essentia = new Essentia(WasmModule);
-
-    // essentia version log to html div
-    $("#logDiv").html(
-      "<h5> essentia-" + essentia.version + " wasm backend loaded ... </h5>"
-    );
-
-    $("#logDiv").append(
-      '<button id="btn" class="ui white inverted button">Compute HCDF </button>'
-    );
-
-    var button = document.getElementById("btn");
-
-    // add onclick event handler to comoute button
-    button.addEventListener("click", () => onClickFeatureExtractor(), false);
+      essentia = new Essentia(WasmModule);
   });
-});
+};
+
+
+export default {HCDF, loadEssentia}
